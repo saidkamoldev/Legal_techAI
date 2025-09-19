@@ -6,54 +6,51 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	
 )
 
-
-
-
-// AIdan kelgan javobni qabul qilish uchun tuzilma
-type OpenRouterResponse struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
+// Gemini API javobini qabul qilish uchun tuzilma
+type GeminiResponse struct {
+	Candidates []struct {
+		Content struct {
+			Parts []struct {
+				Text string `json:"text"`
+			} `json:"parts"`
+		} `json:"content"`
+	} `json:"candidates"`
 }
 
-// AIga yuboriladigan so'rovning tuzilmasi
-type OpenRouterRequest struct {
-	Model    string `json:"model"`
-	Messages []struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	} `json:"messages"`
+// Gemini API'ga yuboriladigan so'rovning tuzilmasi
+type GeminiRequest struct {
+	Contents []struct {
+		Parts []struct {
+			Text string `json:"text"`
+		} `json:"parts"`
+	} `json:"contents"`
 }
 
-// analyzeDocumentAI hujjat matnini Gemini Flash 2.0 ga tahlil qilish uchun yuboradi
+// analyzeDocumentAI hujjat matnini to'g'ridan-to'g'ri Gemini AI ga tahlil qilish uchun yuboradi
 func analyzeDocumentAI(text string, apiKey string) (string, error) {
-	// Konfiguratsiya ma'lumotlarini `.env` faylidan o'qish
-	// apiKey := os.Getenv("OPENROUTER_API_KEY")
-	if apiKey == "" {
-		return "", fmt.Errorf("OPENROUTER_API_KEY topilmadi")
-	}
-
 	// AIga yuboriladigan so'rovni yaratish
-	requestBody, err := json.Marshal(OpenRouterRequest{
-		Model: "google/gemini-flash-1.5", // Yoki "google/gemini-pro"
-		Messages: []struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
+	requestBody, err := json.Marshal(GeminiRequest{
+		Contents: []struct {
+			Parts []struct {
+				Text string `json:"text"`
+			} `json:"parts"`
 		}{
 			{
-				Role:    "user",
-				Content: fmt.Sprintf(`Quyidagi hujjatni tahlil qilib, rus tilida quyidagi bandlar bo'yicha qisqacha hisobot ber:
-				1. Основные пункты документа (asosiy punktlari)
-				2. Обязанности сторон (tomomlar majburiyatlari)
-				3. Возможные риски (ehtimoliy xavflar)
-				
-				Hujjat matni:
-				%s`, text),
+				Parts: []struct {
+					Text string `json:"text"`
+				}{
+					{
+						Text: fmt.Sprintf(`Quyidagi hujjatni tahlil qilib, rus tilida quyidagi bandlar bo'yicha qisqacha hisobot ber:
+						1. Основные пункты документа (asosiy punktlari)
+						2. Обязанности сторон (tomomlar majburiyatlari)
+						3. Возможные риски (ehtimoliy xavflar)
+						
+						Hujjat matni:
+						%s`, text),
+					},
+				},
 			},
 		},
 	})
@@ -62,15 +59,14 @@ func analyzeDocumentAI(text string, apiKey string) (string, error) {
 	}
 
 	// HTTP so'rovni yaratish
-	req, err := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewBuffer(requestBody))
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=%s", apiKey)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return "", fmt.Errorf("HTTP so'rovini yaratishda xato: %w", err)
 	}
 
 	// Sarlavhalarni (headers) qo'shish
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("HTTP-Referer", "sizning-saytingiz-yoki-loyihangiz-nomi") // OpenRouter talabi
 
 	// HTTP so'rovini yuborish
 	client := &http.Client{}
@@ -91,14 +87,14 @@ func analyzeDocumentAI(text string, apiKey string) (string, error) {
 	}
 
 	// Javobni tahlil qilish
-	var response OpenRouterResponse
+	var response GeminiResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		return "", fmt.Errorf("javobni tahlil qilishda xato: %w", err)
 	}
 
-	if len(response.Choices) == 0 {
+	if len(response.Candidates) == 0 || len(response.Candidates[0].Content.Parts) == 0 {
 		return "", fmt.Errorf("AI javobida ma'lumot topilmadi")
 	}
 
-	return response.Choices[0].Message.Content, nil
+	return response.Candidates[0].Content.Parts[0].Text, nil
 }

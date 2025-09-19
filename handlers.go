@@ -13,7 +13,7 @@ import (
 func handleDocument(c telebot.Context, cfg *Config) error {
 	doc := c.Message().Document
     
-    // Fayl nomini kichik harflarga o'tkazib tekshiramiz
+    // Fayl kengaytmasini kichik harflarga o'tkazib, tekshiramiz
     fileNameLower := strings.ToLower(doc.FileName)
     if !strings.HasSuffix(fileNameLower, ".pdf") && !strings.HasSuffix(fileNameLower, ".docx") && !strings.HasSuffix(fileNameLower, ".doc") && !strings.HasSuffix(fileNameLower, ".txt") {
         return c.Send("Kechirasiz, faqat .pdf, .docx, .doc va .txt formatidagi fayllarni qabul qilaman.")
@@ -55,7 +55,7 @@ func handleDocument(c telebot.Context, cfg *Config) error {
 	}
 	
 	// AIga tahlil uchun yuborish.
-	analysis, err := analyzeDocumentAI(documentText, cfg.OpenRouterAPIKey)
+	analysis, err := analyzeDocumentAI(documentText, cfg.GeminiAPIKey) // cfg.GeminiAPIKey dan foydalanadi
 	if err != nil {
 		return c.Send(fmt.Sprintf("AI tahlilida xato: %v", err))
 	}

@@ -1,39 +1,32 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/joho/godotenv"
+    "fmt"
+    "os"
+    "github.com/joho/godotenv"
 )
 
-// Config - dasturning asosiy konfiguratsiya ma'lumotlari uchun tuzilma.
 type Config struct {
-	TelegramBotToken string
-	OpenRouterAPIKey string
+    TelegramBotToken string
+    GeminiAPIKey     string // O'zgartirildi
 }
 
-// LoadConfig - `.env` faylidan konfiguratsiya ma'lumotlarini yuklaydi.
 func LoadConfig() (*Config, error) {
-	// godotenv.Load() `.env` faylini yuklaydi.
-	if err := godotenv.Load(); err != nil {
-		// Agar `.env` fayli topilmasa, xato qaytaradi.
-		return nil, fmt.Errorf(".env fayli topilmadi: %w", err)
-	}
+    if err := godotenv.Load(); err != nil {
+        return nil, fmt.Errorf(".env fayli topilmadi: %w", err)
+    }
 
-	// Ma'lumotlarni muhit o'zgaruvchilari (environment variables)dan o'qish.
-	cfg := &Config{
-		TelegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
-		OpenRouterAPIKey: os.Getenv("OPENROUTER_API_KEY"),
-	}
+    cfg := &Config{
+        TelegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
+        GeminiAPIKey:     os.Getenv("GEMINI_API_KEY"), // O'zgartirildi
+    }
 
-	// Agar kerakli kalitlar yo'q bo'lsa, xato qaytaradi.
-	if cfg.TelegramBotToken == "" {
-		return nil, fmt.Errorf("TELEGRAM_BOT_TOKEN muhit o'zgaruvchisi o'rnatilmagan")
-	}
-	if cfg.OpenRouterAPIKey == "" {
-		return nil, fmt.Errorf("OPENROUTER_API_KEY muhit o'zgaruvchisi o'rnatilmagan")
-	}
+    if cfg.TelegramBotToken == "" {
+        return nil, fmt.Errorf("TELEGRAM_BOT_TOKEN muhit o'zgaruvchisi o'rnatilmagan")
+    }
+    if cfg.GeminiAPIKey == "" {
+        return nil, fmt.Errorf("GEMINI_API_KEY muhit o'zgaruvchisi o'rnatilmagan")
+    }
 
-	return cfg, nil
+    return cfg, nil
 }
