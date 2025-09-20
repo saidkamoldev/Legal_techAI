@@ -16,53 +16,53 @@ func handleDocument(c telebot.Context, cfg *Config) error {
     // Fayl kengaytmasini kichik harflarga o'tkazib, tekshiramiz
     fileNameLower := strings.ToLower(doc.FileName)
     if !strings.HasSuffix(fileNameLower, ".pdf") && !strings.HasSuffix(fileNameLower, ".docx") && !strings.HasSuffix(fileNameLower, ".doc") && !strings.HasSuffix(fileNameLower, ".txt") {
-        return c.Send("Kechirasiz, faqat .pdf, .docx, .doc va .txt formatidagi fayllarni qabul qilaman.")
+        return c.Send("К сожалению, я принимаю только файлы в форматах .pdf, .docx, .doc и .txt.")
     }
 
 	// Fayl hajmini tekshirish (10 MB).
 	if doc.FileSize > 10*1024*1024 {
-		return c.Send("Fayl hajmi 10 MB dan oshmasligi kerak.")
+		return c.Send("Размер файла не должен превышать 10 МБ.")
 	}
 
 	// Faylni vaqtinchalik papkaga yuklab olish.
 	tempDir := "temp_files"
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		return c.Send("Vaqtinchalik papka yaratishda xato: " + err.Error())
+		return c.Send("Ошибка при создании временной папки: " + err.Error())
 	}
 	filePath := fmt.Sprintf("%s/%d_%s", tempDir, time.Now().UnixNano(), doc.FileName)
 	err := c.Bot().Download(&doc.File, filePath)
 	if err != nil {
-		return c.Send("Faylni yuklab olishda xato: " + err.Error())
+		return c.Send("Ошибка при загрузке файла: " + err.Error())
 	}
 	defer os.Remove(filePath) // Fayl tahlil qilingandan so'ng o'chiriladi.
 
-	if err := c.Send("Fayl qabul qilindi, matnni ajratib olyapman..."); err != nil {
+	if err := c.Send("Файл принят, извлекаю текст..."); err != nil {
 		return err
 	}
     
 	// Fayldan matnni ajratish.
 	documentText, err := parseDocument(filePath)
 	if err != nil {
-		return c.Send(fmt.Sprintf("Hujjatni tahlil qilishda xato: %v", err))
+		return c.Send(fmt.Sprintf("Ошибка при анализе документа: %v", err))
 	}
 
 	if len(documentText) < 50 { // Matn hajmi juda qisqa bo'lsa
-		return c.Send("Hujjat matni juda qisqa. Iltimos, to'liqroq hujjat yuboring.")
+		return c.Send("Текст документа слишком короткий. Пожалуйста, отправьте более полный документ.")
 	}
 
-	if err := c.Send("Matnni AIga tahlil uchun yuboryapman... Bu jarayon biroz vaqt olishi mumkin."); err != nil {
+	if err := c.Send("Отправляю текст на анализ ИИ... Это может занять некоторое время."); err != nil {
 		return err
 	}
 	
 	// AIga tahlil uchun yuborish.
 	analysis, err := analyzeDocumentAI(documentText, cfg.GeminiAPIKey)
 	if err != nil {
-		return c.Send(fmt.Sprintf("AI tahlilida xato: %v", err))
+		return c.Send(fmt.Sprintf("Ошибка анализа ИИ: %v", err))
 	}
 
 	// Natijalarni chiroyli formatlash
 	var builder strings.Builder
-	builder.WriteString("✅ **Tahlil natijasi:**\n\n")
+	builder.WriteString("✅ **Результат анализа:**\n\n")
 
 	builder.WriteString("**Основные пункты:**\n")
 	builder.WriteString(analysis.Summary)

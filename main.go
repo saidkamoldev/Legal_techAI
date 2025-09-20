@@ -23,10 +23,22 @@ func main() {
 		log.Fatalf("Telegram bot yaratishda xato: %v", err)
 	}
 
+	// Maxsus klaviatura yaratish
+	var (
+		menu = &telebot.ReplyMarkup{ResizeKeyboard: true}
+		btnUpload = menu.Text("Загрузить документ")
+	)
+	menu.Reply(menu.Row(btnUpload))
+
 	// /start buyrug'ini qayta ishlash
 	b.Handle("/start", func(c telebot.Context) error {
-		welcomeMessage := "Assalomu alaykum! Men yuridik hujjatlaringizni tahlil qilib beruvchi botman. Menga `.pdf`, `.docx`, `.doc` yoki `.txt` formatidagi hujjatni yuboring, men uning asosiy punktlari, tomonlar majburiyatlari va ehtimoliy xavflarini topib beraman."
-		return c.Send(welcomeMessage)
+		welcomeMessage := "Здравствуйте! Я — бот для анализа юридических документов. Отправьте мне файл в формате .pdf, .docx, .doc или .txt, и я подготовлю для вас краткий анализ.\n\nНажмите кнопку ниже, чтобы загрузить документ."
+		return c.Send(welcomeMessage, menu)
+	})
+
+	// "Загрузить документ" tugmasini bosganda ishlaydigan handler
+	b.Handle(&btnUpload, func(c telebot.Context) error {
+		return c.Send("Пожалуйста, отправьте ваш документ.")
 	})
 
 	// Fayllarni qayta ishlash
