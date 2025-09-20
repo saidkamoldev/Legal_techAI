@@ -59,7 +59,7 @@ func analyzeDocumentAI(text string, apiKey string) (string, error) {
 	}
 
 	// HTTP so'rovni yaratish
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=%s", apiKey)
+url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", apiKey)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return "", fmt.Errorf("HTTP so'rovini yaratishda xato: %w", err)
